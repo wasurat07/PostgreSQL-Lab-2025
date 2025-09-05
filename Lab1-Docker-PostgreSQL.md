@@ -88,17 +88,19 @@ docker run hello-world
 ### Step 1: Pull PostgreSQL Docker Image
 
 ```bash
-# ดาวน์โหลด PostgreSQL Image (เวอร์ชัน 15)
-docker pull postgres:15
+# ดาวน์โหลด PostgreSQL Image (Latest เวอร์ชัน )
+docker pull postgres
+-- กรณีระบุเวอร์ชั่นที่ต้องการ เช่น 16.3 ให้ระบุดังนี้ docker pull postgres:16.3
 
 # ตรวจสอบ Images ที่มี
 docker images
 
 # ตรวจสอบรายละเอียดของ Image
-docker inspect postgres:15
+docker inspect postgres
+
+-- กรณีระบุเวอร์ชั่น ใช้คำสั่ง docker inspect postgres:16.3
 ```
 
-**คำอธิบาย**: เราใช้ PostgreSQL เวอร์ชัน 15 ซึ่งเป็นเวอร์ชันที่เสถียรและมีฟีเจอร์ครบถ้วน
 
 **บันทึกผลการทดลอง - Step 1:**
 ```
@@ -147,7 +149,7 @@ docker run --name postgres-lab \
   -c maintenance_work_mem=128MB
 ```
 
-**พารามิเตอร์อธิบาย**:
+**คำอธิบายพารามิเตอร์**:
 - `--name postgres-lab`: ตั้งชื่อ Container
 - `-e POSTGRES_PASSWORD=admin123`: กำหนดรหัสผ่าน postgres user
 - `-e POSTGRES_DB=testdb`: สร้างฐานข้อมูล testdb อัตโนมัติ
@@ -159,7 +161,7 @@ docker run --name postgres-lab \
 
 **บันทึกผลการทดลอง - Step 3:**
 ```
-ใส่ Screenshot ของผลการรัน docker run และสถานะ Container ที่นี่
+ใส่ Screenshot ของผลการรัน docker run ที่นี่
 ```
 
 ### Step 4: Verify Container Status and Resource Usage
@@ -192,6 +194,11 @@ docker volume inspect postgres-data
 # เชื่อมต่อผ่าน psql ใน Container
 docker exec -it postgres-lab psql -U postgres
 ```
+**คำอธิบายพารามิเตอร์**:
+docker exec คำสั่งนี้ใช้เพื่อ รันคำสั่งภายในคอนเทนเนอร์ Docker ที่กำลังทำงานอยู่ 
+โดยสั่งให้คอนเทนเนอร์ที่ชื่อ postgres-lab เปิดโปรแกรม psql เพื่อเชื่อมต่อฐานข้อมูล PostgreSQL ในฐานะผู้ใช้ postgres
+-i (ย่อมาจาก --interactive): ทำให้ input (STDIN) เปิดอยู่ตลอดเวลา
+-t (ย่อมาจาก --tty): จัดสรรเทอร์มินัลเสมือน (pseudo-TTY) ทำให้เราสามารถโต้ตอบกับคอนเทนเนอร์ได้เหมือนกับการใช้เทอร์มินัลปกติบนคอมพิวเตอร์
 
 ```sql
 -- ตรวจสอบเวอร์ชัน PostgreSQL
@@ -222,7 +229,7 @@ WHERE name IN ('shared_buffers', 'work_mem', 'maintenance_work_mem', 'effective_
 ```
 ใส่ Screenshot ของ:
 1. ผลการรัน SELECT version();
-2. ผลการรัน SHOW shared_buffers; และ memory settings อื่นๆ
+2. ผลการรัน SHOW shared_buffers; SHOW work_mem; SHOW maintenance_work_mem;SHOW effective_cache_size;
 3. ผลการรัน \l และ \du
 ```
 
@@ -234,8 +241,8 @@ CREATE DATABASE lab_db
     WITH OWNER = postgres
          ENCODING = 'UTF8'
          TABLESPACE = pg_default
-         LC_COLLATE = 'en_US.utf8'
-         LC_CTYPE = 'en_US.utf8'
+         LC_COLLATE = 'th_TH.utf8'
+         LC_CTYPE = 'th_TH.utf8'
          CONNECTION LIMIT = -1
          TEMPLATE template1;
 
