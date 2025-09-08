@@ -241,13 +241,11 @@ CREATE DATABASE lab_db
     WITH OWNER = postgres
          ENCODING = 'UTF8'
          TABLESPACE = pg_default
-         LC_COLLATE = 'th_TH.utf8'
-         LC_CTYPE = 'th_TH.utf8'
          CONNECTION LIMIT = -1
          TEMPLATE template1;
 
 -- ตรวจสอบฐานข้อมูลที่สร้าง
-\l+
+\l
 
 -- เชื่อมต่อไปยังฐานข้อมูลใหม่
 \c lab_db
@@ -348,7 +346,9 @@ ALTER USER lab_user NOCREATEROLE;
 GRANT CONNECT ON DATABASE lab_db TO lab_user;
 GRANT CONNECT ON DATABASE testdb TO lab_user;
 
--- สร้างตารางทดสอบ
+-- สร้างตารางทดสอบใน lab_db
+\c lab_db
+
 CREATE TABLE test_permissions (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100),
@@ -371,6 +371,22 @@ GRANT INSERT, UPDATE ON test_permissions TO db_admin;
 -- ให้สิทธิ์ในระดับ Schema
 GRANT USAGE ON SCHEMA public TO lab_user;
 GRANT ALL ON SCHEMA public TO db_admin;
+
+-- สร้างตารางทดสอบเพิ่มเติมใน postgres database
+\c postgres
+
+CREATE TABLE postgres_test_table (
+    id SERIAL PRIMARY KEY,
+    description VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO postgres_test_table (description) VALUES 
+    ('Test in postgres database'),
+    ('Another test record');
+
+-- ให้สิทธิ์สำหรับตารางใน postgres database
+GRANT SELECT ON postgres_test_table TO lab_user;
 ```
 
 **บันทึกผลการทดลอง - Step 8:**
@@ -380,7 +396,12 @@ GRANT ALL ON SCHEMA public TO db_admin;
 2. ผลการรัน \dp test_permissions
 3. ผลการ GRANT commands
 ```
+**คำถาม
+ ```
+Access Privileges   postgres=arwdDxtm/postgres มีความหมายอย่างไร
 
+
+ ```
 ### Step 9: Schema Management และ Namespace
 
 ```sql
@@ -392,7 +413,7 @@ CREATE SCHEMA sales AUTHORIZATION postgres;
 CREATE SCHEMA hr AUTHORIZATION postgres;  
 CREATE SCHEMA inventory AUTHORIZATION postgres;
 CREATE SCHEMA finance AUTHORIZATION db_admin;
-
+-- สร้าง SCHEMA และกำหนดเจ้าของ SCHEMA 
 -- ตรวจสอบ Schemas
 \dn+
 
@@ -445,6 +466,13 @@ INSERT INTO sales.customers (name, email, phone) VALUES
     ('Jane Smith', 'jane@example.com', '098-765-4321'),
     ('Bob Johnson', 'bob@example.com', '555-123-4567');
 
+-- เพิ่มข้อมูลในตาราง orders เพื่อให้สามารถทดสอบ JOIN ได้
+INSERT INTO sales.orders (customer_id, order_date, total_amount) VALUES
+    (1, '2024-01-15 10:30:00', 1299.98),
+    (1, '2024-02-20 14:45:00', 89.97),
+    (2, '2024-01-28 09:15:00', 79.99),
+    (3, '2024-02-10 16:20:00', 1049.99);
+
 INSERT INTO hr.employees (name, department, salary, hire_date) VALUES
     ('Alice Brown', 'IT', 75000, '2023-01-15'),
     ('Charlie Wilson', 'HR', 65000, '2023-02-01'),
@@ -454,6 +482,22 @@ INSERT INTO inventory.products (product_name, category, price, stock_quantity) V
     ('Laptop', 'Electronics', 999.99, 50),
     ('Mouse', 'Electronics', 29.99, 200),
     ('Keyboard', 'Electronics', 79.99, 100);
+
+-- สร้างตารางเพิ่มเติมสำหรับทดสอบ JOIN ข้าม Schema
+CREATE TABLE hr.employee_orders (
+    emp_order_id SERIAL PRIMARY KEY,
+    employee_id INTEGER REFERENCES hr.employees(employee_id),
+    customer_id INTEGER, -- จะ reference ไปยัง sales.customers
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    commission DECIMAL(8,2)
+);
+
+-- ใส่ข้อมูลสำหรับทดสอบ JOIN ข้าม Schema
+INSERT INTO hr.employee_orders (employee_id, customer_id, order_date, commission) VALUES
+    (1, 1, '2024-01-15 10:30:00', 129.99),
+    (1, 2, '2024-01-28 09:15:00', 7.99),
+    (2, 3, '2024-02-10 16:20:00', 104.99),
+    (3, 1, '2024-02-20 14:45:00', 8.99);
 ```
 
 **บันทึกผลการทดลอง - Step 9:**
@@ -462,6 +506,7 @@ INSERT INTO inventory.products (product_name, category, price, stock_quantity) V
 1. ผลการสร้าง schemas (\dn+)
 2. ผลการสร้างตารางในแต่ละ schema
 3. ผลการใส่ข้อมูลและ query ข้อมูล
+4. ข้อมูลในตาราง employee_orders ที่จะใช้สำหรับ JOIN ข้าม schema
 ```
 
 ### Step 10: ทดสอบการเข้าถึง Schema และ Search Path
@@ -483,13 +528,40 @@ SHOW search_path;
 SELECT * FROM customers; -- จะหาจาก sales schema
 SELECT * FROM employees; -- จะหาจาก hr schema
 
--- ทดสอบ JOIN ข้าม Schema
+-- ทดสอบ JOIN ภายใน Schema เดียวกัน
 SELECT 
     c.name as customer_name,
     o.order_date,
     o.total_amount
 FROM sales.customers c
-JOIN sales.orders o ON c.customer_id = o.customer_id;
+JOIN sales.orders o ON c.customer_id = o.customer_id
+ORDER BY o.order_date;
+
+-- ทดสอบ JOIN ข้าม Schema (sales และ hr)
+SELECT 
+    c.name as customer_name,
+    e.name as employee_name,
+    e.department,
+    eo.order_date,
+    eo.commission
+FROM sales.customers c
+JOIN hr.employee_orders eo ON c.customer_id = eo.customer_id
+JOIN hr.employees e ON eo.employee_id = e.employee_id
+ORDER BY eo.order_date;
+
+-- ทดสอบ Complex JOIN ข้าม 3 Schema
+SELECT 
+    c.name as customer_name,
+    e.name as sales_rep,
+    e.department,
+    p.product_name,
+    p.price,
+    eo.commission
+FROM sales.customers c
+JOIN hr.employee_orders eo ON c.customer_id = eo.customer_id
+JOIN hr.employees e ON eo.employee_id = e.employee_id
+JOIN inventory.products p ON p.price < (eo.commission * 10) -- สมมติว่า commission เป็น 10% ของ product price
+ORDER BY c.name, eo.order_date;
 
 -- Reset Search Path
 SET search_path TO public;
@@ -499,8 +571,9 @@ SET search_path TO public;
 ```
 ใส่ Screenshot ของ:
 1. ผลการแสดง search_path
-2. ผลการ query ข้าม schemas
-3. ผลการ JOIN ข้าม schemas
+2. ผลการ query ภายใน schema เดียวกัน (sales.customers + sales.orders)
+3. ผลการ JOIN ข้าม schemas (sales + hr + inventory)
+4. ข้อมูลที่แสดงจาก complex join ข้าม 3 schemas
 ```
 
 ### Step 11: ทดสอบการเชื่อมต่อจาก User อื่น
@@ -516,10 +589,11 @@ docker exec -it postgres-lab psql -U lab_user -d lab_db
 
 -- ทดสอบการเข้าถึงข้อมูล
 SELECT * FROM test_permissions; -- ควรทำงานได้
-SELECT * FROM sales.customers; -- อาจไม่ได้ถ้าไม่มีสิทธิ์
+SELECT * FROM sales.customers; -- ไม่มีสิทธิ์
 
 -- ทดสอบการ INSERT
-INSERT INTO test_permissions (name) VALUES ('Test by lab_user'); -- อาจไม่ได้
+INSERT INTO test_permissions (name) VALUES ('Test by lab_user'); -- ทำไม่ได้
+
 
 -- ออกจาก psql
 \q
@@ -557,7 +631,7 @@ docker run --name postgres-backup-test \
   -v ~/postgres-backup:/backup \
   -v postgres-data:/var/lib/postgresql/data \
   -p 5433:5432 \
-  -d postgres:15
+  -d postgres
 ```
 
 **บันทึกผลการทดลอง - Step 12:**
@@ -664,7 +738,7 @@ docker run --name postgres-optimized \
   --memory="2g" \
   --memory-swap="4g" \
   -e POSTGRES_PASSWORD=admin123 \
-  -d postgres:15 \
+  -d postgres \
   -c shared_buffers=512MB \
   -c work_mem=32MB \
   -c maintenance_work_mem=256MB
@@ -747,7 +821,128 @@ docker volume create postgres-data
    - `orders` (order_id, customer_id, order_date, status, total)
    - `order_items` (order_item_id, order_id, product_id, quantity, price)
 
-3. ใส่ข้อมูลตัวอย่างและสร้าง queries:
+3. ใส่ข้อมูลตัวอย่างดังนี้
+   ```
+   
+-- ใส่ข้อมูลใน categories
+INSERT INTO ecommerce.categories (name, description) VALUES
+    ('Electronics', 'Electronic devices and gadgets'),
+    ('Clothing', 'Apparel and fashion items'),
+    ('Books', 'Books and educational materials'),
+    ('Home & Garden', 'Home improvement and garden supplies'),
+    ('Sports', 'Sports equipment and accessories');
+
+-- ใส่ข้อมูลใน products
+INSERT INTO ecommerce.products (name, description, price, category_id, stock) VALUES
+    ('iPhone 15', 'Latest Apple smartphone', 999.99, 1, 50),
+    ('Samsung Galaxy S24', 'Android flagship phone', 899.99, 1, 45),
+    ('MacBook Air', 'Apple laptop computer', 1299.99, 1, 30),
+    ('Wireless Headphones', 'Bluetooth noise-canceling headphones', 199.99, 1, 100),
+    ('Gaming Mouse', 'High-precision gaming mouse', 79.99, 1, 75),
+    
+    ('T-Shirt', 'Cotton casual t-shirt', 19.99, 2, 200),
+    ('Jeans', 'Denim blue jeans', 59.99, 2, 150),
+    ('Sneakers', 'Comfortable running sneakers', 129.99, 2, 80),
+    ('Jacket', 'Winter waterproof jacket', 89.99, 2, 60),
+    ('Hat', 'Baseball cap', 24.99, 2, 120),
+    
+    ('Programming Book', 'Learn Python programming', 39.99, 3, 40),
+    ('Novel', 'Best-selling fiction novel', 14.99, 3, 90),
+    ('Textbook', 'University mathematics textbook', 79.99, 3, 25),
+    
+    ('Garden Tools Set', 'Complete gardening tool kit', 49.99, 4, 35),
+    ('Plant Pot', 'Ceramic decorative pot', 15.99, 4, 80),
+    
+    ('Tennis Racket', 'Professional tennis racket', 149.99, 5, 20),
+    ('Football', 'Official size football', 29.99, 5, 55);
+
+-- ใส่ข้อมูลใน customers
+INSERT INTO ecommerce.customers (name, email, phone, address) VALUES
+    ('John Smith', 'john.smith@email.com', '555-0101', '123 Main St, City A'),
+    ('Sarah Johnson', 'sarah.j@email.com', '555-0102', '456 Oak Ave, City B'),
+    ('Mike Brown', 'mike.brown@email.com', '555-0103', '789 Pine Rd, City C'),
+    ('Emily Davis', 'emily.d@email.com', '555-0104', '321 Elm St, City A'),
+    ('David Wilson', 'david.w@email.com', '555-0105', '654 Maple Dr, City B'),
+    ('Lisa Anderson', 'lisa.a@email.com', '555-0106', '987 Cedar Ln, City C'),
+    ('Tom Miller', 'tom.miller@email.com', '555-0107', '147 Birch St, City A'),
+    ('Amy Taylor', 'amy.t@email.com', '555-0108', '258 Ash Ave, City B');
+
+-- ใส่ข้อมูลใน orders
+INSERT INTO ecommerce.orders (customer_id, order_date, status, total) VALUES
+    (1, '2024-01-15 10:30:00', 'completed', 1199.98),
+    (2, '2024-01-16 14:20:00', 'completed', 219.98),
+    (3, '2024-01-17 09:15:00', 'completed', 159.97),
+    (1, '2024-01-18 11:45:00', 'completed', 79.99),
+    (4, '2024-01-19 16:30:00', 'completed', 89.98),
+    (5, '2024-01-20 13:25:00', 'completed', 1329.98),
+    (2, '2024-01-21 15:10:00', 'completed', 149.99),
+    (6, '2024-01-22 12:40:00', 'completed', 294.97),
+    (3, '2024-01-23 08:50:00', 'completed', 199.99),
+    (7, '2024-01-24 17:20:00', 'completed', 169.98),
+    (1, '2024-01-25 10:15:00', 'completed', 39.99),
+    (8, '2024-01-26 14:35:00', 'completed', 599.97),
+    (4, '2024-01-27 11:20:00', 'processing', 179.98),
+    (5, '2024-01-28 09:45:00', 'shipped', 44.98),
+    (6, '2024-01-29 16:55:00', 'completed', 129.99);
+
+-- ใส่ข้อมูลใน order_items
+INSERT INTO ecommerce.order_items (order_id, product_id, quantity, price) VALUES
+    -- Order 1: John Smith
+    (1, 1, 1, 999.99),  -- iPhone 15
+    (1, 4, 1, 199.99),  -- Wireless Headphones
+    
+    -- Order 2: Sarah Johnson  
+    (2, 4, 1, 199.99),  -- Wireless Headphones
+    (2, 6, 1, 19.99),   -- T-Shirt
+    
+    -- Order 3: Mike Brown
+    (3, 7, 1, 59.99),   -- Jeans
+    (3, 5, 1, 79.99),   -- Gaming Mouse
+    (3, 6, 1, 19.99),   -- T-Shirt
+    
+    -- Order 4: John Smith
+    (4, 5, 1, 79.99),   -- Gaming Mouse
+    
+    -- Order 5: Emily Davis
+    (5, 9, 1, 89.99),   -- Jacket
+    
+    -- Order 6: David Wilson
+    (6, 3, 1, 1299.99), -- MacBook Air
+    (6, 12, 2, 14.99),  -- Novel x2
+    
+    -- Order 7: Sarah Johnson
+    (7, 16, 1, 149.99), -- Tennis Racket
+    
+    -- Order 8: Lisa Anderson
+    (8, 8, 2, 129.99),  -- Sneakers x2
+    (8, 10, 1, 24.99),  -- Hat
+    (8, 11, 1, 39.99),  -- Programming Book
+    
+    -- Order 9: Mike Brown
+    (9, 4, 1, 199.99),  -- Wireless Headphones
+    
+    -- Order 10: Tom Miller
+    (10, 2, 1, 899.99), -- Samsung Galaxy S24
+    (10, 6, 3, 19.99),  -- T-Shirt x3
+    (10, 14, 1, 49.99), -- Garden Tools Set
+    
+    -- Order 11: John Smith
+    (11, 11, 1, 39.99), -- Programming Book
+    
+    -- Order 12: Amy Taylor
+    (12, 1, 1, 999.99), -- iPhone 15 (ลดราคาเหลือ 599.97)
+    
+    -- Order 13: Emily Davis (processing)
+    (13, 17, 6, 29.99), -- Football x6
+    
+    -- Order 14: David Wilson (shipped)
+    (14, 15, 2, 15.99), -- Plant Pot x2
+    (14, 12, 1, 14.99), -- Novel
+    
+    -- Order 15: Lisa Anderson
+    (15, 8, 1, 129.99); -- Sneakers
+   ```
+   สร้าง queries เพื่อหาคำตอบ:
    - หาสินค้าที่ขายดีที่สุด 5 อันดับ
    - หายอดขายรวมของแต่ละหมวดหมู่
    - หาลูกค้าที่ซื้อสินค้ามากที่สุด
@@ -767,9 +962,6 @@ docker volume create postgres-data
 ```
 
 
-
-
-
 ## การทดสอบความเข้าใจ
 
 ### Quiz 1: Conceptual Questions
@@ -782,14 +974,13 @@ docker volume create postgres-data
 
 **คำตอบ Quiz 1:**
 ```
-เขียนคำตอบของคุณที่นี่
+เขียนคำตอบที่นี่
 ```
 
 
 ## สรุปและการประเมินผล
 
 ### สิ่งที่ได้เรียนรู้
-ในการทดลองนี้ เราได้เรียนรู้:
 
 1. **Docker Fundamentals**:
    - การใช้ Docker Volume เพื่อความคงทนของข้อมูล
@@ -830,24 +1021,6 @@ docker volume create postgres-data
    - ใช้ pg_stat_* views เพื่อติดตามประสิทธิภาพ
    - สำรองข้อมูลเป็นประจำ
 
-### Cleanup Commands
-หลังจากเสร็จสิ้นการทดลอง อย่าลืมทำความสะอาด:
-
-```bash
-# หยุดและลบ Containers
-docker stop postgres-lab postgres-backup-test multi-postgres
-docker rm postgres-lab postgres-backup-test multi-postgres
-
-# ลบ Images (ถ้าต้องการ)
-docker rmi postgres:15
-
-# ลบ Volumes (ระวัง: จะลบข้อมูลทั้งหมด)
-docker volume rm postgres-data postgres-config multi-postgres-data
-
-# ตรวจสอบการใช้พื้นที่
-docker system df
-docker system prune -a
-```
 
 ---
 **หมายเหตุสำคัญ**: 
