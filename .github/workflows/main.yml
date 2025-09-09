@@ -1,0 +1,41 @@
+name: Close Late Pull Requests
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  close_late_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if PR is late
+        id: check_date
+        run: |
+          DUE_DATE="2025-09-15T23:59:59Z"
+          PR_DATE=$(echo '${{ github.event.pull_request.created_at }}' | sed 's/\..*Z/Z/')
+          
+          if [[ "${PR_DATE}" > "${DUE_DATE}" ]]; then
+            echo "::set-output name=is_late::true"
+          else
+            echo "::set-output name=is_late::false"
+          fi
+
+      - name: Close late PR
+        if: steps.check_date.outputs.is_late == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: 'This pull request was submitted after the due date and has been automatically closed. If you have any questions, please contact the instructor.'
+            });
+
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+              state: 'closed'
+            });
