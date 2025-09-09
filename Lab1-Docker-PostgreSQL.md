@@ -946,7 +946,7 @@ INSERT INTO ecommerce.order_items (order_id, product_id, quantity, price) VALUES
    - หาสินค้าที่ขายดีที่สุด 5 อันดับ
    - หายอดขายรวมของแต่ละหมวดหมู่
    - หาลูกค้าที่ซื้อสินค้ามากที่สุด
-
+```sql
 ```sql
 -- พื้นที่สำหรับคำตอบ - เขียน SQL commands ทั้งหมด
 
