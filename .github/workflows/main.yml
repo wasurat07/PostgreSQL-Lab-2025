@@ -10,7 +10,7 @@ jobs:
       - name: Check if PR is late
         id: check_date
         run: |
-          DUE_DATE="2025-09-16T23:59:59Z"
+          DUE_DATE="2025-09-15T23:59:59Z"
           PR_DATE=$(date -d '${{ github.event.pull_request.created_at }}' -u +"%Y-%m-%dT%H:%M:%SZ")
           
           echo "Due date: ${DUE_DATE}"
