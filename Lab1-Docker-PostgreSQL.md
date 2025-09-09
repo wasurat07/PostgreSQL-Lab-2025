@@ -134,18 +134,18 @@ docker volume create postgres-config
 
 ```bash
 # สร้างและรัน PostgreSQL Container พร้อม Volume
-docker run --name postgres-lab \
-  -e POSTGRES_PASSWORD=admin123 \
-  -e POSTGRES_DB=testdb \
-  -e POSTGRES_USER=postgres \
-  -v postgres-data:/var/lib/postgresql/data \
-  -v postgres-config:/etc/postgresql \
-  -p 5432:5432 \
-  --memory="1g" \
-  --cpus="1.0" \
-  -d postgres \
-  -c shared_buffers=256MB \
-  -c work_mem=16MB \
+docker run --name postgres-lab 
+  -e POSTGRES_PASSWORD=admin123 
+  -e POSTGRES_DB=testdb 
+  -e POSTGRES_USER=postgres 
+  -v postgres-data:/var/lib/postgresql/data 
+  -v postgres-config:/etc/postgresql 
+  -p 5432:5432 
+  --memory="1g" 
+  --cpus="1.0" 
+  -d postgres 
+  -c shared_buffers=256MB 
+  -c work_mem=16MB 
   -c maintenance_work_mem=128MB
 ```
 
