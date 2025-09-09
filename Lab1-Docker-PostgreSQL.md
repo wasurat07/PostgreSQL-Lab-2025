@@ -822,21 +822,21 @@ docker volume create postgres-data
    - `order_items` (order_item_id, order_id, product_id, quantity, price)
 
 3. ใส่ข้อมูลตัวอย่างดังนี้
-   
-   ```sql
-   
--- ใส่ข้อมูลใน categories
 
-INSERT INTO ecommerce.categories (name, description) VALUES
+```sql
+   
+  -- ใส่ข้อมูลใน categories
+
+    INSERT INTO ecommerce.categories (name, description) VALUES
     ('Electronics', 'Electronic devices and gadgets'),
     ('Clothing', 'Apparel and fashion items'),
     ('Books', 'Books and educational materials'),
     ('Home & Garden', 'Home improvement and garden supplies'),
     ('Sports', 'Sports equipment and accessories');
 
--- ใส่ข้อมูลใน products
+  -- ใส่ข้อมูลใน products
 
-INSERT INTO ecommerce.products (name, description, price, category_id, stock) VALUES
+    INSERT INTO ecommerce.products (name, description, price, category_id, stock) VALUES
     ('iPhone 15', 'Latest Apple smartphone', 999.99, 1, 50),
     ('Samsung Galaxy S24', 'Android flagship phone', 899.99, 1, 45),
     ('MacBook Air', 'Apple laptop computer', 1299.99, 1, 30),
@@ -859,9 +859,9 @@ INSERT INTO ecommerce.products (name, description, price, category_id, stock) VA
     ('Tennis Racket', 'Professional tennis racket', 149.99, 5, 20),
     ('Football', 'Official size football', 29.99, 5, 55);
 
--- ใส่ข้อมูลใน customers
+    -- ใส่ข้อมูลใน customers
 
-INSERT INTO ecommerce.customers (name, email, phone, address) VALUES
+    INSERT INTO ecommerce.customers (name, email, phone, address) VALUES
     ('John Smith', 'john.smith@email.com', '555-0101', '123 Main St, City A'),
     ('Sarah Johnson', 'sarah.j@email.com', '555-0102', '456 Oak Ave, City B'),
     ('Mike Brown', 'mike.brown@email.com', '555-0103', '789 Pine Rd, City C'),
@@ -871,9 +871,9 @@ INSERT INTO ecommerce.customers (name, email, phone, address) VALUES
     ('Tom Miller', 'tom.miller@email.com', '555-0107', '147 Birch St, City A'),
     ('Amy Taylor', 'amy.t@email.com', '555-0108', '258 Ash Ave, City B');
 
--- ใส่ข้อมูลใน orders
+    -- ใส่ข้อมูลใน orders
 
-INSERT INTO ecommerce.orders (customer_id, order_date, status, total) VALUES
+    INSERT INTO ecommerce.orders (customer_id, order_date, status, total) VALUES
     (1, '2024-01-15 10:30:00', 'completed', 1199.98),
     (2, '2024-01-16 14:20:00', 'completed', 219.98),
     (3, '2024-01-17 09:15:00', 'completed', 159.97),
@@ -890,9 +890,9 @@ INSERT INTO ecommerce.orders (customer_id, order_date, status, total) VALUES
     (5, '2024-01-28 09:45:00', 'shipped', 44.98),
     (6, '2024-01-29 16:55:00', 'completed', 129.99);
 
--- ใส่ข้อมูลใน order_items
+    -- ใส่ข้อมูลใน order_items
 
-INSERT INTO ecommerce.order_items (order_id, product_id, quantity, price) VALUES
+    INSERT INTO ecommerce.order_items (order_id, product_id, quantity, price) VALUES
     -- Order 1: John Smith
     (1, 1, 1, 999.99),  -- iPhone 15
     (1, 4, 1, 199.99),  -- Wireless Headphones
@@ -955,7 +955,7 @@ INSERT INTO ecommerce.order_items (order_id, product_id, quantity, price) VALUES
    - หาลูกค้าที่ซื้อสินค้ามากที่สุด
 
 ```sql
--- พื้นที่สำหรับคำตอบ - เขียน SQL commands ทั้งหมด
+  -- พื้นที่สำหรับคำตอบ - เขียน SQL commands ทั้งหมด
 
 ```
 
