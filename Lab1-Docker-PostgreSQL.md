@@ -143,7 +143,7 @@ docker run --name postgres-lab \
   -p 5432:5432 \
   --memory="1g" \
   --cpus="1.0" \
-  -d postgres:15 \
+  -d postgres \
   -c shared_buffers=256MB \
   -c work_mem=16MB \
   -c maintenance_work_mem=128MB
