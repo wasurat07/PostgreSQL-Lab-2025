@@ -822,9 +822,11 @@ docker volume create postgres-data
    - `order_items` (order_item_id, order_id, product_id, quantity, price)
 
 3. ใส่ข้อมูลตัวอย่างดังนี้
-   ```
+   
+   ```sql
    
 -- ใส่ข้อมูลใน categories
+
 INSERT INTO ecommerce.categories (name, description) VALUES
     ('Electronics', 'Electronic devices and gadgets'),
     ('Clothing', 'Apparel and fashion items'),
@@ -833,6 +835,7 @@ INSERT INTO ecommerce.categories (name, description) VALUES
     ('Sports', 'Sports equipment and accessories');
 
 -- ใส่ข้อมูลใน products
+
 INSERT INTO ecommerce.products (name, description, price, category_id, stock) VALUES
     ('iPhone 15', 'Latest Apple smartphone', 999.99, 1, 50),
     ('Samsung Galaxy S24', 'Android flagship phone', 899.99, 1, 45),
@@ -857,6 +860,7 @@ INSERT INTO ecommerce.products (name, description, price, category_id, stock) VA
     ('Football', 'Official size football', 29.99, 5, 55);
 
 -- ใส่ข้อมูลใน customers
+
 INSERT INTO ecommerce.customers (name, email, phone, address) VALUES
     ('John Smith', 'john.smith@email.com', '555-0101', '123 Main St, City A'),
     ('Sarah Johnson', 'sarah.j@email.com', '555-0102', '456 Oak Ave, City B'),
@@ -868,6 +872,7 @@ INSERT INTO ecommerce.customers (name, email, phone, address) VALUES
     ('Amy Taylor', 'amy.t@email.com', '555-0108', '258 Ash Ave, City B');
 
 -- ใส่ข้อมูลใน orders
+
 INSERT INTO ecommerce.orders (customer_id, order_date, status, total) VALUES
     (1, '2024-01-15 10:30:00', 'completed', 1199.98),
     (2, '2024-01-16 14:20:00', 'completed', 219.98),
@@ -886,6 +891,7 @@ INSERT INTO ecommerce.orders (customer_id, order_date, status, total) VALUES
     (6, '2024-01-29 16:55:00', 'completed', 129.99);
 
 -- ใส่ข้อมูลใน order_items
+
 INSERT INTO ecommerce.order_items (order_id, product_id, quantity, price) VALUES
     -- Order 1: John Smith
     (1, 1, 1, 999.99),  -- iPhone 15
@@ -941,12 +947,13 @@ INSERT INTO ecommerce.order_items (order_id, product_id, quantity, price) VALUES
     
     -- Order 15: Lisa Anderson
     (15, 8, 1, 129.99); -- Sneakers
-   ```
+```
+```
    สร้าง queries เพื่อหาคำตอบ:
    - หาสินค้าที่ขายดีที่สุด 5 อันดับ
    - หายอดขายรวมของแต่ละหมวดหมู่
    - หาลูกค้าที่ซื้อสินค้ามากที่สุด
-```sql
+
 ```sql
 -- พื้นที่สำหรับคำตอบ - เขียน SQL commands ทั้งหมด
 
